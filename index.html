@@ -44,7 +44,7 @@ body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#0a1f0f;c
 
 /* 牌的通用样式 */
 .t{width:36px;height:50px;border-radius:5px;display:inline-flex;flex-direction:column;justify-content:center;align-items:center;position:relative;flex-shrink:0;cursor:default;transition:transform .15s,box-shadow .15s}
-.t.face{background:linear-gradient(180deg,#f5f0e0 0%,#e8e0cc 100%);border:1.5px solid #b8a88a;box-shadow:0 2px 4px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.6)}
+.t.face{background:linear-gradient(180deg,#f8f4e8 0%,#f0ead4 50%,#e8e0c8 100%);border:1.5px solid #b8a88a;box-shadow:0 3px 6px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(0,0,0,.05)}
 .t.back{background:linear-gradient(135deg,#1a6b3c 0%,#0f4d2a 100%);border:1.5px solid #0a3d20;box-shadow:0 2px 4px rgba(0,0,0,.3)}
 .t.back::after{content:'';position:absolute;inset:3px;border:1px solid rgba(255,255,255,.15);border-radius:3px}
 .t.small{width:28px;height:38px}.t.small .wan-num{font-size:14px}.t.small .wan-label{font-size:8px}
@@ -185,74 +185,90 @@ function getWanHTML(v){
   return `<span class="wan-num">${WANS[v]}</span><span class="wan-label">万</span>`;
 }
 
+
 function getTongHTML(v,size){
-  // 筒子：用彩色圆点表示
   const sz=size==='mini'?4:size==='small'?5:size==='river-t'?5:7;
-  const colors={
-    1:{c:['#dc2626']},// 1筒 大红
-    2:{c:['#16a34a','#16a34a']},// 2筒 绿
-    3:{c:['#2563eb','#2563eb','#2563eb']},// 3筒 蓝
-    4:{c:['#2563eb','#2563eb','#2563eb','#2563eb']},
-    5:{c:['#2563eb','#2563eb','#dc2626','#2563eb','#2563eb']},// 中红四蓝
-    6:{c:['#16a34a','#16a34a','#16a34a','#16a34a','#16a34a','#16a34a']},
-    7:{c:['#16a34a','#16a34a','#16a34a','#16a34a','#16a34a','#16a34a','#16a34a']},
-    8:{c:['#2563eb','#2563eb','#2563eb','#2563eb','#2563eb','#2563eb','#2563eb','#2563eb']},
-    9:{c:['#16a34a','#16a34a','#16a34a','#16a34a','#dc2626','#16a34a','#16a34a','#16a34a','#16a34a']}
+  const big=v===1?(sz*2.2):sz;
+  // Color per dot: 1=red, 2=green, 3=blue, 4=blue, 5=blue+red center, 6=green, 7=green, 8=blue, 9=green+red center
+  const colorMap={
+    1:['#dc2626'],
+    2:['#16a34a','#16a34a'],
+    3:['#2563eb','#2563eb','#2563eb'],
+    4:['#2563eb','#2563eb','#2563eb','#2563eb'],
+    5:['#2563eb','#2563eb','#2563eb','#2563eb','#dc2626'],
+    6:['#16a34a','#16a34a','#16a34a','#16a34a','#16a34a','#16a34a'],
+    7:['#16a34a','#16a34a','#16a34a','#16a34a','#16a34a','#16a34a','#16a34a'],
+    8:['#2563eb','#2563eb','#2563eb','#2563eb','#2563eb','#2563eb','#2563eb','#2563eb'],
+    9:['#16a34a','#16a34a','#16a34a','#16a34a','#dc2626','#16a34a','#16a34a','#16a34a','#16a34a']
   };
-  const ci=colors[v]||{c:[]};
-  const layouts={
-    1:'grid:1/1',2:'grid:1/2',3:'grid:3/1d',4:'grid:2/2',5:'grid:5x',
-    6:'grid:2/3',7:'grid:7x',8:'grid:2/4',9:'grid:3/3'
+  const colors=colorMap[v];
+  // Grid positions (row,col) in a 3x3 virtual grid (0-2)
+  const positions={
+    1:[[1,1]],
+    2:[[0,1],[2,1]],
+    3:[[0,0],[1,1],[2,2]],
+    4:[[0,0],[0,2],[2,0],[2,2]],
+    5:[[0,0],[0,2],[1,1],[2,0],[2,2]],
+    6:[[0,0],[1,0],[2,0],[0,2],[1,2],[2,2]],
+    7:[[0,0],[0,1],[0,2],[1,0],[1,1],[2,0],[2,1]],
+    8:[[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1]],
+    9:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]]
   };
-  // Use flexbox layout
-  let html='<div class="tong-dots" style="'+getTongLayout(v,sz)+'">';
-  ci.c.forEach((color,i)=>{
-    const s1=v===1?sz*2:sz;
-    html+=`<div class="tong-dot" style="width:${s1}px;height:${s1}px;background:radial-gradient(circle at 35% 35%,${lighten(color)},${color});"></div>`;
+  const pos=positions[v];
+  // Determine grid dimensions
+  const maxR=Math.max(...pos.map(p=>p[0]))+1;
+  const maxC=Math.max(...pos.map(p=>p[1]))+1;
+  const gap=1;
+  const w=maxC*big+(maxC-1)*gap;
+  const h=maxR*big+(maxR-1)*gap;
+  let html=`<div style="position:relative;width:${w}px;height:${h}px;margin:auto;">`;
+  pos.forEach((p,i)=>{
+    const c=colors[i];
+    const lt=c==='#dc2626'?'#fca5a5':c==='#16a34a'?'#86efac':'#93c5fd';
+    const x=p[1]*(big+gap);
+    const y=p[0]*(big+gap);
+    const s1=v===1?big:big;
+    html+=`<div style="position:absolute;left:${x}px;top:${y}px;width:${s1}px;height:${s1}px;border-radius:50%;background:radial-gradient(circle at 35% 35%,${lt},${c});border:0.5px solid rgba(0,0,0,.2);"></div>`;
   });
   html+='</div>';
   return html;
 }
 
-function getTongLayout(v,sz){
-  switch(v){
-    case 1:return 'width:100%;height:100%;';
-    case 2:return 'width:100%;height:90%;flex-direction:column;';
-    case 3:return 'width:100%;height:90%;flex-direction:column;';
-    case 4:return `width:${sz*2+6}px;height:${sz*2+6}px;flex-wrap:wrap;`;
-    case 5:return `width:${sz*2+6}px;height:${sz*3+6}px;flex-wrap:wrap;position:relative;`;
-    case 6:return `width:${sz*2+4}px;flex-wrap:wrap;`;
-    case 7:return `width:${sz*3+6}px;flex-wrap:wrap;`;
-    case 8:return `width:${sz*2+4}px;flex-wrap:wrap;`;
-    case 9:return `width:${sz*3+4}px;flex-wrap:wrap;`;
-    default:return '';
-  }
-}
-
-function lighten(c){
-  const m={'#dc2626':'#fca5a5','#16a34a':'#86efac','#2563eb':'#93c5fd'};
-  return m[c]||'#fff';
-}
-
 function getTiaoHTML(v,size){
   if(v===1){
-    // 1条 = 小鸟
-    const fs=size==='mini'?14:size==='small'?16:size==='river-t'?16:22;
-    return `<div class="bird-icon" style="font-size:${fs}px">🐦</div>`;
+    const fs=size==='mini'?12:size==='small'?14:size==='river-t'?14:20;
+    return `<div style="font-size:${fs}px;line-height:1;text-align:center">🐦</div>`;
   }
-  // 2-9条：绿色竹节
-  const h=size==='mini'?10:size==='small'?12:size==='river-t'?12:16;
-  const cols=v<=3?v:v<=6?3:v<=8?4:3;
-  const rows=Math.ceil(v/cols);
-  let html='<div class="tiao-wrap" style="gap:1px;">';
-  for(let r=0;r<rows;r++){
-    const inRow=r<rows-1?cols:v-cols*r;
-    html+='<div style="display:flex;gap:1px;justify-content:center;width:100%">';
-    for(let c=0;c<inRow;c++){
-      html+=`<div class="bamboo-stick" style="height:${h}px"></div>`;
+  const bw=size==='mini'?8:size==='small'?10:size==='river-t'?10:14;
+  const bh=size==='mini'?3:size==='small'?4:size==='river-t'?4:5;
+  const gap=size==='mini'?1:2;
+  // Positions in grid like tong
+  const positions={
+    2:[[0,0],[1,0]],
+    3:[[0,0],[1,0],[2,0]],
+    4:[[0,0],[0,1],[1,0],[1,1]],
+    5:[[0,0],[0,2],[1,1],[2,0],[2,2]],// corners + red center
+    6:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]],
+    7:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[1,3]],
+    8:[[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1]],
+    9:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]]
+  };
+  const pos=positions[v];
+  const maxR=Math.max(...pos.map(p=>p[0]))+1;
+  const maxC=Math.max(...pos.map(p=>p[1]))+1;
+  const tw=maxC*(bw)+(maxC-1)*gap;
+  const th=maxR*(bh)+(maxR-1)*gap;
+  let html=`<div style="position:relative;width:${tw}px;height:${th}px;margin:auto;">`;
+  pos.forEach((p,i)=>{
+    const x=p[1]*(bw+gap);
+    const y=p[0]*(bh+gap);
+    const isRedCenter=(v===5&&i===2);
+    if(isRedCenter){
+      html+=`<div style="position:absolute;left:${x+bw/2-2}px;top:${y+bh/2-2}px;width:4px;height:4px;border-radius:50%;background:#dc2626;"></div>`;
+    }else{
+      html+=`<div style="position:absolute;left:${x}px;top:${y}px;width:${bw}px;height:${bh}px;background:linear-gradient(180deg,#22c55e,#15803d);border-radius:1px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.2);"></div>`;
     }
-    html+='</div>';
-  }
+  });
   html+='</div>';
   return html;
 }
@@ -302,10 +318,9 @@ class Game{
   }
 
   deal(){
-    // 庄家(bottom)5张，其他4张
+    // 每人4张
     SEATS.forEach(s=>{
-      const n=s==='bottom'?5:4;
-      for(let i=0;i<n;i++) this.players[s].hand.push(this.wall.pop());
+      for(let i=0;i<4;i++) this.players[s].hand.push(this.wall.pop());
     });
     SEATS.forEach(s=>this.sortHand(s));
     this.render();

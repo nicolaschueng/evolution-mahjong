@@ -126,7 +126,7 @@ body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#0a1f0f;c
   <div class="top-bar">
     <div class="left">
       <span class="stage-badge stage-1" id="stageBadge">一阶 (4张)</span>
-      <span class="wall-count" id="wallCount">牌墙: 108</span>
+      <span class="wall-count" id="wallCount">牌墙: 216</span>
     </div>
     <div class="status-text" id="statusText">进化麻将</div>
   </div>
@@ -315,7 +315,7 @@ class Game{
     this.wall=[];
     ['tong','tiao','wan'].forEach(s=>{
       for(let v=1;v<=9;v++){
-        for(let i=0;i<4;i++) this.wall.push({s,v,id:s+v+'_'+i});
+        for(let i=0;i<8;i++) this.wall.push({s,v,id:s+v+'_'+i});
       }
     });
   }

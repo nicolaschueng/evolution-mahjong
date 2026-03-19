@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>进化麻将</title>
+    <title>进化麻将 v2</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 100%);
+            background: linear-gradient(135deg, #0d2818 0%, #1a472a 50%, #2d5a3d 100%);
             color: white;
             height: 100vh;
             overflow: hidden;
@@ -35,1031 +35,826 @@
             justify-content: space-between;
             align-items: center;
             padding: 0 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         .player-info {
             display: flex;
-            gap: 20px;
+            gap: 15px;
         }
 
         .player {
             padding: 8px 16px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             border: 2px solid transparent;
             transition: all 0.3s;
+            font-size: 14px;
         }
 
         .player.active {
             border-color: #ffd700;
-            background: rgba(255, 215, 0, 0.2);
+            background: rgba(255, 215, 0, 0.25);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
 
         .player.banker {
-            background: rgba(255, 215, 0, 0.3);
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
         }
 
-        /* 游戏主区域 */
-        .game-area {
+        .game-status {
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 牌桌区域 */
+        .table-area {
             flex: 1;
-            display: flex;
-            flex-direction: column;
             position: relative;
-        }
-
-        /* 对手区域 */
-        .opponents {
-            height: 30%;
             display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 10px;
-        }
-
-        .opponent {
-            width: 25%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            margin: 0 5px;
-        }
-
-        .opponent-hand {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 2px;
-            max-width: 90%;
-        }
-
-        .tile-back {
-            width: 20px;
-            height: 30px;
-            background: linear-gradient(45deg, #8b4513, #a0522d);
-            border: 1px solid #654321;
-            border-radius: 3px;
-            margin: 1px;
-        }
-
-        /* 桌面区域 */
-        .table-center {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
+        }
+
+        .table {
+            width: 90%;
+            height: 90%;
+            background: linear-gradient(145deg, #1a472a, #2d5a3d);
+            border-radius: 20px;
+            border: 8px solid #8b4513;
+            box-shadow:
+                inset 0 0 50px rgba(0, 0, 0, 0.3),
+                0 10px 30px rgba(0, 0, 0, 0.5);
             position: relative;
+            overflow: hidden;
         }
 
-        .discard-pile {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 5px;
-            max-width: 80%;
-            margin-bottom: 20px;
-        }
-
-        .deck-count {
+        /* 牌河区域 */
+        .discard-pool {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 24px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 10px;
+            width: 70%;
+            height: 70%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 5px;
+            padding: 20px;
+        }
+
+        .discard-slot {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
         }
 
         /* 玩家手牌区域 */
         .player-area {
-            height: 35%;
+            position: absolute;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            padding: 10px;
         }
 
-        .player-hand {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 5px;
-            margin-bottom: 10px;
-            min-height: 60px;
+        .player-area.bottom {
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 120px;
+        }
+
+        .player-area.top {
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 80px;
+            flex-direction: row;
+        }
+
+        .player-area.left {
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 60%;
+            flex-direction: column;
+        }
+
+        .player-area.right {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 60%;
+            flex-direction: column;
         }
 
         /* 麻将牌样式 */
         .tile {
             width: 40px;
-            height: 60px;
-            background: linear-gradient(135deg, #f5f5dc, #fff8dc);
+            height: 56px;
+            background: white;
+            border-radius: 6px;
             border: 2px solid #8b4513;
-            border-radius: 5px;
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 0 10px rgba(0, 0, 0, 0.1);
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            font-size: 18px;
+            align-items: center;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
-            user-select: none;
+            transition: all 0.3s;
             position: relative;
+            margin: 2px;
         }
 
         .tile:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
         }
 
         .tile.selected {
             transform: translateY(-10px);
             border-color: #ffd700;
-            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
         }
 
-        .tile.discarded {
-            opacity: 0.7;
-            transform: scale(0.9);
+        .tile.back {
+            background: linear-gradient(45deg, #8b4513, #a0522d);
+            border-color: #654321;
         }
 
-        .tile.tong { color: #000; }
-        .tile.tiao { color: #000; }
-        .tile.wan { color: #000; }
-
-        .tile-number {
-            font-size: 16px;
+        /* 筒子牌 */
+        .tile.tong {
+            background: linear-gradient(135deg, #fff, #f8f8f8);
         }
 
-        .tile-type {
-            font-size: 12px;
-            margin-top: 2px;
+        .tile.tong .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+            margin: 1px;
+        }
+
+        .tile.tong[data-value="1"] .dots { display: flex; justify-content: center; align-items: center; }
+        .tile.tong[data-value="2"] .dots { display: flex; justify-content: space-between; flex-wrap: wrap; height: 100%; align-items: center; }
+        .tile.tong[data-value="3"] .dots { display: flex; flex-direction: column; justify-content: space-between; height: 100%; align-items: center; }
+        .tile.tong[data-value="4"] .dots { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; align-items: center; justify-items: center; }
+        .tile.tong[data-value="5"] .dots { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; align-items: center; justify-items: center; position: relative; }
+        .tile.tong[data-value="5"] .dot:nth-child(5) { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .tile.tong[data-value="6"] .dots { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; align-items: center; justify-items: center; }
+        .tile.tong[data-value="7"] .dots { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; align-items: center; justify-items: center; position: relative; }
+        .tile.tong[data-value="7"] .dot:nth-child(7) { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .tile.tong[data-value="8"] .dots { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; align-items: center; justify-items: center; }
+        .tile.tong[data-value="9"] .dots { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; align-items: center; justify-items: center; }
+
+        /* 条子牌 */
+        .tile.tiao {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .tile.tiao .bamboo {
+            width: 4px;
+            height: 20px;
+            background: white;
+            border-radius: 2px;
+            margin: 1px;
+            position: relative;
+        }
+
+        .tile.tiao .bamboo::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -1px;
+            right: -1px;
+            height: 4px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .tile.tiao .bamboo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: -1px;
+            right: -1px;
+            height: 4px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        /* 万子牌 */
+        .tile.wan {
+            background: linear-gradient(135deg, #fff, #f8f8f8);
+            color: #c0392b;
+            font-size: 20px;
+            position: relative;
+        }
+
+        .tile.wan::before {
+            content: '万';
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 10px;
+            color: black;
         }
 
         /* 操作按钮区域 */
         .action-buttons {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             gap: 10px;
-            margin-top: 10px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 20px;
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn.peng { background: linear-gradient(135deg, #ff9800, #f57c00); }
-        .btn.gang { background: linear-gradient(135deg, #f44336, #d32f2f); }
-        .btn.hu { background: linear-gradient(135deg, #9c27b0, #7b1fa2); }
-
-        /* 定缺选择区域 */
-        .dingque-selection {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            z-index: 1000;
-            display: none;
-        }
-
-        .dingque-selection.show {
-            display: block;
-        }
-
-        .dingque-options {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-        }
-
-        .dingque-option {
-            width: 80px;
-            height: 120px;
-            background: linear-gradient(135deg, #f5f5dc, #fff8dc);
-            border: 3px solid transparent;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .action-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
-        .dingque-option:hover {
-            border-color: #ffd700;
-            transform: scale(1.1);
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .dingque-option.tong { color: #000; }
-        .dingque-option.tiao { color: #000; }
-        .dingque-option.wan { color: #000; }
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-hu { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .btn-gang { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .btn-peng { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .btn-chi { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+        .btn-guo { background: linear-gradient(135deg, #95a5a6, #7f8c8d); }
 
         /* 响应式设计 */
-        @media (max-width: 768px) {
+        @media (max-width: 430px) {
             .tile {
                 width: 35px;
-                height: 52px;
-                font-size: 16px;
-            }
-
-            .tile-number {
+                height: 49px;
                 font-size: 14px;
             }
 
-            .tile-type {
-                font-size: 10px;
+            .player-area.bottom {
+                height: 100px;
             }
 
-            .player-info {
-                gap: 10px;
-                flex-wrap: wrap;
-                justify-content: center;
+            .player-area.top {
+                height: 60px;
             }
 
-            .player {
-                padding: 6px 12px;
-                font-size: 14px;
-                margin: 2px;
-            }
-
-            .opponents {
-                height: 25%;
-                flex-direction: column;
-            }
-
-            .opponent {
-                width: 90%;
-                height: 30%;
-                margin: 5px 0;
-            }
-
-            .player-area {
-                height: 40%;
+            .player-area.left,
+            .player-area.right {
+                width: 60px;
             }
 
             .action-buttons {
+                bottom: 120px;
                 flex-wrap: wrap;
                 justify-content: center;
             }
 
-            .btn {
-                margin: 2px;
+            .action-btn {
+                padding: 10px 16px;
                 font-size: 12px;
-                padding: 6px 10px;
             }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 375px) {
             .tile {
-                width: 28px;
+                width: 30px;
                 height: 42px;
                 font-size: 12px;
             }
 
-            .tile-number {
-                font-size: 11px;
-            }
-
-            .tile-type {
-                font-size: 8px;
+            .player-area.bottom {
+                height: 90px;
             }
 
             .game-info {
-                height: 45px;
-                padding: 0 5px;
-                flex-direction: column;
-            }
-
-            .player-info {
-                gap: 5px;
+                padding: 0 10px;
             }
 
             .player {
-                padding: 3px 6px;
-                font-size: 10px;
-            }
-
-            .round-info {
+                padding: 6px 12px;
                 font-size: 12px;
             }
-
-            .opponent-hand {
-                gap: 1px;
-            }
-
-            .tile-back {
-                width: 15px;
-                height: 22px;
-            }
-
-            .btn {
-                padding: 4px 8px;
-                font-size: 10px;
-                margin: 1px;
-            }
-
-            .dingque-selection {
-                padding: 20px;
-            }
-
-            .dingque-option {
-                width: 60px;
-                height: 90px;
-                font-size: 18px;
-            }
-        }
-
-        /* 触摸优化 */
-        @media (hover: none) and (pointer: coarse) {
-            .tile:hover {
-                transform: none;
-                box-shadow: none;
-            }
-
-            .tile:active {
-                transform: translateY(-5px);
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            }
-
-            .btn:active {
-                transform: scale(0.95);
-            }
-        }
-
-        /* 防止双击缩放 */
-        * {
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-
-        /* 防止页面滚动 */
-        body {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        /* 动画效果 */
-        @keyframes dealCard {
-            0% { transform: scale(0) rotate(180deg); }
-            100% { transform: scale(1) rotate(0deg); }
-        }
-
-        .tile.dealing {
-            animation: dealCard 0.5s ease-out;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <!-- 顶部信息栏 -->
         <div class="game-info">
             <div class="player-info">
-                <div class="player" id="player-east">东: AI</div>
-                <div class="player active" id="player-south">南: 玩家</div>
-                <div class="player" id="player-west">西: AI</div>
-                <div class="player" id="player-north">北: AI</div>
+                <div class="player" id="player-top">对家</div>
+                <div class="player" id="player-left">左家</div>
+                <div class="player active" id="player-bottom">玩家</div>
+                <div class="player" id="player-right">右家</div>
             </div>
-            <div class="round-info">
-                第 <span id="round-number">1</span> 局 | 剩余: <span id="deck-count">108</span> 张
-            </div>
+            <div class="game-status" id="game-status">准备开始</div>
         </div>
 
-        <!-- 游戏主区域 -->
-        <div class="game-area">
-            <!-- 对手区域 -->
-            <div class="opponents">
-                <div class="opponent" id="opponent-east">
-                    <div>东</div>
-                    <div class="opponent-hand" id="east-hand"></div>
+        <div class="table-area">
+            <div class="table">
+                <!-- 牌河 -->
+                <div class="discard-pool" id="discard-pool">
+                    <!-- 牌河格子由JS动态生成 -->
                 </div>
-                <div class="opponent" id="opponent-north">
-                    <div>北</div>
-                    <div class="opponent-hand" id="north-hand"></div>
-                </div>
-                <div class="opponent" id="opponent-west">
-                    <div>西</div>
-                    <div class="opponent-hand" id="west-hand"></div>
-                </div>
-            </div>
 
-            <!-- 桌面中心 -->
-            <div class="table-center">
-                <div class="discard-pile" id="discard-pile"></div>
-                <div class="deck-count">牌堆: <span id="remaining-cards">108</span></div>
-            </div>
-
-            <!-- 玩家区域 -->
-            <div class="player-area">
-                <div class="player-hand" id="player-hand"></div>
-                <div class="action-buttons">
-                    <button class="btn" id="btn-draw" disabled>摸牌</button>
-                    <button class="btn peng" id="btn-peng" disabled>碰</button>
-                    <button class="btn gang" id="btn-gang" disabled>杠</button>
-                    <button class="btn hu" id="btn-hu" disabled>胡</button>
-                    <button class="btn" id="btn-pass" disabled>过</button>
+                <!-- 玩家手牌区域 -->
+                <div class="player-area top" id="player-top-area">
+                    <!-- 对家手牌 -->
+                </div>
+                <div class="player-area left" id="player-left-area">
+                    <!-- 左家手牌 -->
+                </div>
+                <div class="player-area right" id="player-right-area">
+                    <!-- 右家手牌 -->
+                </div>
+                <div class="player-area bottom" id="player-bottom-area">
+                    <!-- 玩家手牌 -->
                 </div>
             </div>
         </div>
 
-        <!-- 定缺选择弹窗 -->
-        <div class="dingque-selection" id="dingque-selection">
-            <h3>请选择定缺花色</h3>
-            <div class="dingque-options">
-                <div class="dingque-option tong" data-type="tong">
-                    <div class="tile-number">筒</div>
-                </div>
-                <div class="dingque-option tiao" data-type="tiao">
-                    <div class="tile-number">条</div>
-                </div>
-                <div class="dingque-option wan" data-type="wan">
-                    <div class="tile-number">万</div>
-                </div>
-            </div>
+        <!-- 操作按钮 -->
+        <div class="action-buttons" id="action-buttons">
+            <button class="action-btn btn-hu" id="btn-hu">胡</button>
+            <button class="action-btn btn-gang" id="btn-gang">杠</button>
+            <button class="action-btn btn-peng" id="btn-peng">碰</button>
+            <button class="action-btn btn-chi" id="btn-chi">吃</button>
+            <button class="action-btn btn-guo" id="btn-guo">过</button>
         </div>
     </div>
 
     <script>
-        // 麻将游戏核心逻辑
-        class MahjongGame {
+        class EvolutionMahjongV2 {
             constructor() {
-                this.players = ['east', 'south', 'west', 'north'];
-                this.currentPlayer = 'south';
-                this.banker = 'east';
-                this.round = 1;
-                this.deck = [];
-                this.discardPile = [];
+                this.players = ['top', 'left', 'bottom', 'right'];
+                this.currentPlayer = 'bottom';
+                this.banker = 'bottom';
+                this.gameState = 'waiting';
+                this.tiles = [];
                 this.playerHands = {
-                    east: [],
-                    south: [],
-                    west: [],
-                    north: []
+                    top: [],
+                    left: [],
+                    bottom: [],
+                    right: []
                 };
-                this.dingque = {
-                    east: null,
-                    south: null,
-                    west: null,
-                    north: null
-                };
-                this.gameState = 'initial';
+                this.discardedTiles = [];
+                this.lastDiscardedTile = null;
                 this.selectedTile = null;
+                this.canChi = false;
+                this.canPeng = false;
+                this.canGang = false;
+                this.canHu = false;
 
-                this.init();
+                this.initGame();
             }
 
-            // 初始化游戏
-            init() {
-                this.createDeck();
-                this.shuffleDeck();
-                this.dealCards();
+            initGame() {
+                this.generateTiles();
+                this.shuffleTiles();
+                this.dealInitialTiles();
                 this.updateUI();
-                this.bindEvents();
+                this.setupEventListeners();
             }
 
-            // 创建108张麻将牌
-            createDeck() {
-                this.deck = [];
+            generateTiles() {
+                this.tiles = [];
                 const types = ['tong', 'tiao', 'wan'];
 
-                types.forEach(type => {
-                    for (let i = 1; i <= 9; i++) {
+                for (let type of types) {
+                    for (let value = 1; value <= 9; value++) {
                         // 每种牌4张
-                        for (let j = 0; j < 4; j++) {
-                            this.deck.push({
-                                type: type,
-                                number: i,
-                                id: `${type}_${i}_${j}`
-                            });
+                        for (let i = 0; i < 4; i++) {
+                            this.tiles.push({ type, value, id: `${type}-${value}-${i}` });
                         }
                     }
-                });
+                }
             }
 
-            // 洗牌
-            shuffleDeck() {
-                for (let i = this.deck.length - 1; i > 0; i--) {
+            shuffleTiles() {
+                for (let i = this.tiles.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+                    [this.tiles[i], this.tiles[j]] = [this.tiles[j], this.tiles[i]];
                 }
             }
 
-            // 发牌
-            dealCards() {
-                // 庄家5张，闲家4张
-                this.players.forEach((player, index) => {
-                    const cardCount = player === this.banker ? 5 : 4;
-                    this.playerHands[player] = this.deck.splice(0, cardCount);
-
-                    // AI玩家自动定缺
-                    if (player !== 'south') {
-                        this.autoDingque(player);
-                    }
+            dealInitialTiles() {
+                // 每人13张牌
+                this.players.forEach(player => {
+                    this.playerHands[player] = this.tiles.splice(0, 13);
+                    this.sortHand(this.playerHands[player]);
                 });
 
-                this.sortHand(this.playerHands.south);
-                this.gameState = 'dingque';
+                this.gameState = 'playing';
+                this.updateGameStatus('玩家回合');
             }
 
-            // AI自动定缺
-            autoDingque(player) {
-                const hand = this.playerHands[player];
-                const typeCounts = { 'tong': 0, 'tiao': 0, 'wan': 0 };
-
-                hand.forEach(tile => {
-                    typeCounts[tile.type]++;
-                });
-
-                // 选择数量最少的类型作为定缺
-                let minCount = Infinity;
-                let dingqueType = null;
-
-                for (const type in typeCounts) {
-                    if (typeCounts[type] < minCount) {
-                        minCount = typeCounts[type];
-                        dingqueType = type;
-                    }
-                }
-
-                this.dingque[player] = dingqueType;
-            }
-
-            // 排序手牌
             sortHand(hand) {
                 return hand.sort((a, b) => {
-                    if (a.type !== b.type) {
-                        const typeOrder = { 'tong': 1, 'tiao': 2, 'wan': 3 };
+                    const typeOrder = { 'tong': 1, 'tiao': 2, 'wan': 3 };
+                    if (typeOrder[a.type] !== typeOrder[b.type]) {
                         return typeOrder[a.type] - typeOrder[b.type];
                     }
-                    return a.number - b.number;
+                    return a.value - b.value;
                 });
             }
 
-            // 摸牌
-            drawCard(player) {
-                if (this.deck.length === 0) return null;
-
-                const card = this.deck.shift();
-                this.playerHands[player].push(card);
-
-                if (player === 'south') {
-                    this.sortHand(this.playerHands.south);
+            drawTile(player) {
+                if (this.tiles.length === 0) {
+                    this.endGame('流局');
+                    return null;
                 }
 
-                this.updateUI();
-                return card;
+                const tile = this.tiles.shift();
+                this.playerHands[player].push(tile);
+                this.sortHand(this.playerHands[player]);
+
+                // 摸牌后检查自摸进阶
+                this.checkSelfEvolution(player);
+
+                return tile;
             }
 
-            // 打牌
-            discardCard(player, tileIndex) {
-                const hand = this.playerHands[player];
-                if (tileIndex >= 0 && tileIndex < hand.length) {
-                    const tile = hand.splice(tileIndex, 1)[0];
-                    this.discardPile.push({
-                        tile: tile,
-                        player: player
-                    });
+            discardTile(player, tileIndex) {
+                const tile = this.playerHands[player].splice(tileIndex, 1)[0];
+                this.discardedTiles.push({
+                    tile,
+                    player,
+                    position: this.discardedTiles.length
+                });
+                this.lastDiscardedTile = { tile, player };
 
-                    // 检查其他玩家是否可以碰、杠、胡
-                    this.checkOtherPlayersActions(tile);
-                    this.updateUI();
-                    return tile;
+                // 检查其他玩家是否可以吃碰杠
+                this.checkOtherPlayersActions(player, tile);
+
+                this.nextPlayer();
+            }
+
+            checkOtherPlayersActions(discardingPlayer, tile) {
+                this.canChi = false;
+                this.canPeng = false;
+                this.canGang = false;
+                this.canHu = false;
+
+                if (discardingPlayer === 'bottom') return;
+
+                const playerHand = this.playerHands.bottom;
+
+                // 检查吃（只能吃上家的牌）
+                if (this.getPreviousPlayer(discardingPlayer) === 'bottom') {
+                    this.canChi = this.canChiTile(playerHand, tile);
                 }
-                return null;
+
+                // 检查碰
+                this.canPeng = this.canPengTile(playerHand, tile);
+
+                // 检查杠
+                this.canGang = this.canGangTile(playerHand, tile);
+
+                // 检查胡
+                this.canHu = this.canHuTile(playerHand, tile);
+
+                this.updateActionButtons();
             }
 
-            // 检查其他玩家的动作
-            checkOtherPlayersActions(discardedTile) {
-                let hasAction = false;
-                this.lastDiscardedTile = discardedTile;
+            canChiTile(hand, tile) {
+                if (tile.type === 'wan') return false; // 万子不能吃
 
-                // 检查除当前玩家外的其他玩家
-                this.players.forEach(player => {
-                    if (player !== this.currentPlayer) {
-                        const actions = this.checkActions(player, discardedTile);
-                        if (actions.length > 0) {
-                            hasAction = true;
-                            if (player !== 'south') {
-                                // AI玩家自动决策
-                                this.checkAIActions(player, discardedTile);
-                            } else {
-                                // 玩家需要选择动作
-                                this.gameState = 'action';
-                                this.showActionButtons(actions, discardedTile);
-                            }
-                        }
+                const values = hand
+                    .filter(t => t.type === tile.type)
+                    .map(t => t.value);
+
+                const tileValue = tile.value;
+
+                // 检查是否能组成顺子
+                return (values.includes(tileValue - 2) && values.includes(tileValue - 1)) ||
+                       (values.includes(tileValue - 1) && values.includes(tileValue + 1)) ||
+                       (values.includes(tileValue + 1) && values.includes(tileValue + 2));
+            }
+
+            canPengTile(hand, tile) {
+                const sameTiles = hand.filter(t =>
+                    t.type === tile.type && t.value === tile.value
+                );
+                return sameTiles.length >= 2;
+            }
+
+            canGangTile(hand, tile) {
+                const sameTiles = hand.filter(t =>
+                    t.type === tile.type && t.value === tile.value
+                );
+                return sameTiles.length >= 3;
+            }
+
+            canHuTile(hand, tile) {
+                // 简化版胡牌判断
+                const testHand = [...hand, tile];
+                return this.isWinningHand(testHand);
+            }
+
+            isWinningHand(hand) {
+                // 简化版胡牌逻辑
+                if (hand.length % 3 !== 2) return false;
+
+                // 检查是否包含顺子或刻子组合
+                return this.checkHandPattern([...hand]);
+            }
+
+            checkHandPattern(hand) {
+                if (hand.length === 0) return true;
+
+                // 尝试找刻子
+                for (let i = 0; i < hand.length - 2; i++) {
+                    if (hand[i].type === hand[i+1].type && hand[i].type === hand[i+2].type &&
+                        hand[i].value === hand[i+1].value && hand[i].value === hand[i+2].value) {
+                        const newHand = [...hand];
+                        newHand.splice(i, 3);
+                        if (this.checkHandPattern(newHand)) return true;
                     }
-                });
+                }
 
-                if (!hasAction) {
-                    this.nextPlayer();
+                // 尝试找顺子
+                for (let i = 0; i < hand.length - 2; i++) {
+                    if (hand[i].type === hand[i+1].type && hand[i].type === hand[i+2].type &&
+                        hand[i].type !== 'wan' && // 万子不能吃顺子
+                        hand[i].value + 1 === hand[i+1].value &&
+                        hand[i].value + 2 === hand[i+2].value) {
+                        const newHand = [...hand];
+                        newHand.splice(i, 3);
+                        if (this.checkHandPattern(newHand)) return true;
+                    }
+                }
+
+                return hand.length === 0;
+            }
+
+            chi() {
+                if (!this.canChi) return;
+
+                // 实现吃牌逻辑
+                this.performAction('chi');
+
+                // 吃牌后摸3张奖励
+                for (let i = 0; i < 3; i++) {
+                    this.drawTile('bottom');
+                }
+
+                this.nextPlayer();
+            }
+
+            peng() {
+                if (!this.canPeng) return;
+
+                // 实现碰牌逻辑
+                this.performAction('peng');
+
+                // 碰牌后摸3张奖励
+                for (let i = 0; i < 3; i++) {
+                    this.drawTile('bottom');
+                }
+
+                this.nextPlayer();
+            }
+
+            gang() {
+                if (!this.canGang) return;
+
+                // 实现杠牌逻辑
+                this.performAction('gang');
+
+                // 杠牌后摸4张奖励（3+1）
+                for (let i = 0; i < 4; i++) {
+                    this.drawTile('bottom');
+                }
+
+                this.nextPlayer();
+            }
+
+            hu() {
+                if (!this.canHu) return;
+
+                this.endGame('玩家胡牌！');
+            }
+
+            guo() {
+                this.canChi = false;
+                this.canPeng = false;
+                this.canGang = false;
+                this.canHu = false;
+                this.updateActionButtons();
+                this.nextPlayer();
+            }
+
+            performAction(action) {
+                // 实现具体的吃碰杠动作
+                console.log(`执行${action}动作`);
+            }
+
+            checkSelfEvolution(player) {
+                if (player !== 'bottom') return;
+
+                const hand = this.playerHands[player];
+
+                // 检查是否有暗牌可以亮出（凑齐顺子/刻子）
+                this.checkForSelfEvolution(hand);
+            }
+
+            checkForSelfEvolution(hand) {
+                // 简化版自摸进阶检查
+                const sortedHand = this.sortHand([...hand]);
+
+                // 检查刻子
+                for (let i = 0; i < sortedHand.length - 2; i++) {
+                    if (sortedHand[i].type === sortedHand[i+1].type &&
+                        sortedHand[i].type === sortedHand[i+2].type &&
+                        sortedHand[i].value === sortedHand[i+1].value &&
+                        sortedHand[i].value === sortedHand[i+2].value) {
+                        // 发现刻子，可以亮出
+                        this.promptSelfEvolution('刻子', sortedHand[i]);
+                        return;
+                    }
+                }
+
+                // 检查顺子
+                for (let i = 0; i < sortedHand.length - 2; i++) {
+                    if (sortedHand[i].type === sortedHand[i+1].type &&
+                        sortedHand[i].type === sortedHand[i+2].type &&
+                        sortedHand[i].type !== 'wan' &&
+                        sortedHand[i].value + 1 === sortedHand[i+1].value &&
+                        sortedHand[i].value + 2 === sortedHand[i+2].value) {
+                        // 发现顺子，可以亮出
+                        this.promptSelfEvolution('顺子', sortedHand[i]);
+                        return;
+                    }
                 }
             }
 
-            // 显示玩家动作按钮
-            showActionButtons(actions, tile) {
-                const pengBtn = document.getElementById('btn-peng');
-                const gangBtn = document.getElementById('btn-gang');
-                const huBtn = document.getElementById('btn-hu');
-                const passBtn = document.getElementById('btn-pass');
-
-                pengBtn.disabled = !actions.includes('peng');
-                gangBtn.disabled = !actions.includes('gang');
-                huBtn.disabled = !actions.includes('hu');
-                passBtn.disabled = false;
-
-                // 绑定动作按钮事件
-                this.bindActionButtons(tile);
+            promptSelfEvolution(type, tile) {
+                if (confirm(`发现${type}，是否亮出？`)) {
+                    // 实现亮出逻辑
+                    console.log(`亮出${type}`);
+                }
             }
 
-            // 绑定动作按钮事件
-            bindActionButtons(tile) {
-                const pengBtn = document.getElementById('btn-peng');
-                const gangBtn = document.getElementById('btn-gang');
-                const huBtn = document.getElementById('btn-hu');
-                const passBtn = document.getElementById('btn-pass');
-
-                const actionHandler = (action) => {
-                    this.handleAction('south', action, tile);
-                    this.gameState = 'playing';
-                    this.updateUI();
-                };
-
-                pengBtn.onclick = () => actionHandler('peng');
-                gangBtn.onclick = () => actionHandler('gang');
-                huBtn.onclick = () => actionHandler('hu');
-                passBtn.onclick = () => {
-                    this.nextPlayer();
-                    this.gameState = 'playing';
-                    this.updateUI();
-                };
-            }
-
-            // 下一个玩家
             nextPlayer() {
                 const currentIndex = this.players.indexOf(this.currentPlayer);
                 this.currentPlayer = this.players[(currentIndex + 1) % 4];
 
-                if (this.currentPlayer !== 'south') {
-                    setTimeout(() => this.aiPlay(), 1000);
-                }
-            }
-
-            // AI玩家逻辑
-            aiPlay() {
-                if (this.gameState !== 'playing') return;
-
-                const aiPlayer = this.currentPlayer;
-
-                // 先摸牌
-                const drawnTile = this.drawCard(aiPlayer);
-
-                // 检查是否可以胡牌
-                if (this.checkHu(this.playerHands[aiPlayer], drawnTile)) {
-                    this.hu(aiPlayer, '自摸');
-                    return;
+                if (this.currentPlayer === 'bottom') {
+                    // 玩家回合：先摸牌
+                    this.drawTile('bottom');
+                    this.updateGameStatus('玩家回合 - 请选择要打出的牌');
+                } else {
+                    // AI回合
+                    this.updateGameStatus(`${this.getPlayerName(this.currentPlayer)}回合`);
+                    this.simulateAITurn();
                 }
 
-                // AI智能决策
-                const discardedTile = this.aiDecision(aiPlayer);
-                if (discardedTile) {
-                    this.discardCard(aiPlayer, discardedTile.index);
-                }
+                this.updateUI();
             }
 
-            // AI决策算法
-            aiDecision(player) {
-                const hand = this.playerHands[player];
-                const dingqueType = this.dingque[player];
+            simulateAITurn() {
+                setTimeout(() => {
+                    const aiPlayer = this.currentPlayer;
 
-                // 计算每张牌的分数
-                const tileScores = hand.map((tile, index) => {
-                    let score = 0;
+                    // AI摸牌
+                    this.drawTile(aiPlayer);
 
-                    // 定缺牌优先打出（负分）
-                    if (tile.type === dingqueType) {
-                        score -= 100;
-                    }
+                    // AI打牌（简单逻辑：打第一张牌）
+                    this.discardTile(aiPlayer, 0);
 
-                    // 边缘牌（1和9）优先打出
-                    if (tile.number === 1 || tile.number === 9) {
-                        score -= 20;
-                    }
-
-                    // 中间牌（4-6）保留
-                    if (tile.number >= 4 && tile.number <= 6) {
-                        score += 10;
-                    }
-
-                    // 检查是否可以组成顺子或刻子
-                    const potentialMelds = this.countPotentialMelds(hand, tile);
-                    score += potentialMelds * 5;
-
-                    return { index, tile, score };
-                });
-
-                // 选择分数最低的牌（最不需要的牌）
-                tileScores.sort((a, b) => a.score - b.score);
-                return tileScores[0];
+                }, 1000);
             }
 
-            // 计算某张牌能组成的潜在顺子/刻子数量
-            countPotentialMelds(hand, targetTile) {
-                let count = 0;
-                const { type, number } = targetTile;
-
-                // 检查刻子潜力
-                const sameTiles = hand.filter(t =>
-                    t.type === type && t.number === number
-                ).length;
-                if (sameTiles >= 2) count++;
-
-                // 检查顺子潜力
-                const hasPrev1 = hand.some(t =>
-                    t.type === type && t.number === number - 1
-                );
-                const hasPrev2 = hand.some(t =>
-                    t.type === type && t.number === number - 2
-                );
-                const hasNext1 = hand.some(t =>
-                    t.type === type && t.number === number + 1
-                );
-                const hasNext2 = hand.some(t =>
-                    t.type === type && t.number === number + 2
-                );
-
-                if ((hasPrev1 && hasNext1) || (hasPrev1 && hasPrev2) || (hasNext1 && hasNext2)) {
-                    count++;
-                }
-
-                return count;
+            getPreviousPlayer(player) {
+                const index = this.players.indexOf(player);
+                return this.players[(index + 3) % 4]; // 上家
             }
 
-            // 检查AI是否可以碰、杠、胡
-            checkAIActions(player, discardedTile) {
-                const actions = this.checkActions(player, discardedTile);
-
-                if (actions.length > 0) {
-                    // AI决策：优先胡牌，然后杠，最后碰
-                    if (actions.includes('hu')) {
-                        this.hu(player, '点炮');
-                        return true;
-                    } else if (actions.includes('gang')) {
-                        this.gang(player, discardedTile);
-                        return true;
-                    } else if (actions.includes('peng')) {
-                        // AI碰牌概率：30%
-                        if (Math.random() < 0.3) {
-                            this.peng(player, discardedTile);
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }
-
-            // 检查胡牌
-            checkHu(hand, lastTile) {
-                const testHand = lastTile ? [...hand, lastTile] : [...hand];
-
-                // 需要14张牌才能胡牌
-                if (testHand.length !== 14) return false;
-
-                // 检查是否满足基本胡牌条件（简化版）
-                const sortedHand = this.sortHand(testHand);
-
-                // 检查是否所有牌都是同一种花色（清一色）
-                const types = new Set(sortedHand.map(tile => tile.type));
-                if (types.size > 1) return false;
-
-                // 检查是否有将牌（对子）
-                const pairs = this.findPairs(sortedHand);
-                if (pairs.length === 0) return false;
-
-                // 简化胡牌规则：有将牌且其他牌能组成顺子或刻子
-                return this.canFormMelds(sortedHand);
-            }
-
-            // 查找对子
-            findPairs(hand) {
-                const pairs = [];
-                const counts = {};
-
-                hand.forEach(tile => {
-                    const key = `${tile.type}_${tile.number}`;
-                    counts[key] = (counts[key] || 0) + 1;
-                });
-
-                for (const key in counts) {
-                    if (counts[key] >= 2) {
-                        pairs.push(key);
-                    }
-                }
-
-                return pairs;
-            }
-
-            // 检查是否能组成顺子或刻子
-            canFormMelds(hand) {
-                if (hand.length === 0) return true;
-
-                // 检查刻子（三张相同的牌）
-                if (hand.length >= 3 &&
-                    hand[0].type === hand[1].type && hand[0].type === hand[2].type &&
-                    hand[0].number === hand[1].number && hand[0].number === hand[2].number) {
-                    return this.canFormMelds(hand.slice(3));
-                }
-
-                // 检查顺子（三张连续的牌）
-                if (hand.length >= 3) {
-                    const first = hand[0];
-                    const second = this.findTile(hand, first.type, first.number + 1);
-                    const third = this.findTile(hand, first.type, first.number + 2);
-
-                    if (second && third) {
-                        const remaining = hand.filter((tile, index) =>
-                            index !== 0 &&
-                            !(tile.type === second.type && tile.number === second.number) &&
-                            !(tile.type === third.type && tile.number === third.number)
-                        );
-                        return this.canFormMelds(remaining);
-                    }
-                }
-
-                return false;
-            }
-
-            // 在牌中查找特定牌
-            findTile(hand, type, number) {
-                return hand.find(tile => tile.type === type && tile.number === number);
-            }
-
-            // 胡牌
-            hu(player, type) {
-                this.gameState = 'ended';
-                alert(`${this.getPlayerName(player)} ${type}胡牌！游戏结束。`);
-
-                // 显示所有玩家的手牌
-                this.showAllHands();
-            }
-
-            // 获取玩家名称
-            getPlayerName(player) {
+            getPlayerName(position) {
                 const names = {
-                    'east': '东家',
-                    'south': '玩家',
-                    'west': '西家',
-                    'north': '北家'
+                    'top': '对家',
+                    'left': '左家',
+                    'bottom': '玩家',
+                    'right': '右家'
                 };
-                return names[player] || player;
+                return names[position];
             }
 
-            // 显示所有手牌
-            showAllHands() {
-                this.players.forEach(player => {
-                    const handElement = document.getElementById(`${player}-hand`);
-                    handElement.innerHTML = '';
-
-                    this.playerHands[player].forEach(tile => {
-                        const tileElement = this.createTileElement(tile, -1, false);
-                        handElement.appendChild(tileElement);
-                    });
-                });
-            }
-
-            // 检查碰
-            checkPeng(hand, discardedTile) {
-                return hand.filter(tile =>
-                    tile.type === discardedTile.type &&
-                    tile.number === discardedTile.number
-                ).length >= 2;
-            }
-
-            // 检查杠
-            checkGang(hand, discardedTile) {
-                return hand.filter(tile =>
-                    tile.type === discardedTile.type &&
-                    tile.number === discardedTile.number
-                ).length >= 3;
-            }
-
-            // 更新UI
             updateUI() {
                 this.updatePlayerHands();
-                this.updateDiscardPile();
-                this.updateDeckCount();
+                this.updateDiscardPool();
                 this.updatePlayerStatus();
                 this.updateActionButtons();
             }
 
-            // 更新玩家手牌显示
             updatePlayerHands() {
-                // 更新玩家手牌
-                const playerHandElement = document.getElementById('player-hand');
-                playerHandElement.innerHTML = '';
+                this.players.forEach(player => {
+                    const area = document.getElementById(`player-${player}-area`);
+                    area.innerHTML = '';
 
-                this.playerHands.south.forEach((tile, index) => {
-                    const tileElement = this.createTileElement(tile, index, true);
-                    playerHandElement.appendChild(tileElement);
-                });
-
-                // 更新AI玩家手牌（显示背面）
-                ['east', 'west', 'north'].forEach(player => {
-                    const handElement = document.getElementById(`${player}-hand`);
-                    handElement.innerHTML = '';
-
-                    for (let i = 0; i < this.playerHands[player].length; i++) {
-                        const tileBack = document.createElement('div');
-                        tileBack.className = 'tile-back';
-                        handElement.appendChild(tileBack);
-                    }
+                    const hand = this.playerHands[player];
+                    hand.forEach((tile, index) => {
+                        const tileElement = this.createTileElement(tile, player, index);
+                        area.appendChild(tileElement);
+                    });
                 });
             }
 
-            // 创建麻将牌元素
-            createTileElement(tile, index, isPlayer = false) {
-                const tileElement = document.createElement('div');
-                tileElement.className = `tile ${tile.type}`;
-                tileElement.innerHTML = `
-                    <div class="tile-number">${this.getTileDisplay(tile)}</div>
-                    <div class="tile-type">${this.getTypeName(tile.type)}</div>
-                `;
+            createTileElement(tile, player, index) {
+                const div = document.createElement('div');
+                div.className = `tile ${tile.type}`;
+                div.setAttribute('data-type', tile.type);
+                div.setAttribute('data-value', tile.value);
+                div.setAttribute('data-index', index);
 
-                if (isPlayer) {
-                    tileElement.addEventListener('click', () => {
+                if (player !== 'bottom') {
+                    div.classList.add('back');
+                } else {
+                    div.innerHTML = this.getTileContent(tile);
+
+                    div.addEventListener('click', () => {
                         this.selectTile(index);
                     });
                 }
 
-                return tileElement;
+                return div;
             }
 
-            // 获取牌面显示
-            getTileDisplay(tile) {
-                return tile.number;
+            getTileContent(tile) {
+                if (tile.type === 'tong') {
+                    return `<div class="dots">${this.getTongDots(tile.value)}</div>`;
+                } else if (tile.type === 'tiao') {
+                    return `<div class="bamboos">${this.getTiaoBamboos(tile.value)}</div>`;
+                } else {
+                    return `<span>${tile.value}</span>`;
+                }
             }
 
-            // 获取花色名称
-            getTypeName(type) {
-                const names = { 'tong': '筒', 'tiao': '条', 'wan': '万' };
-                return names[type] || type;
+            getTongDots(value) {
+                let dots = '';
+                for (let i = 0; i < value; i++) {
+                    dots += '<div class="dot"></div>';
+                }
+                return dots;
             }
 
-            // 更新弃牌堆
-            updateDiscardPile() {
-                const discardPileElement = document.getElementById('discard-pile');
-                discardPileElement.innerHTML = '';
-
-                this.discardPile.forEach(discard => {
-                    const tileElement = this.createTileElement(discard.tile, -1, false);
-                    tileElement.classList.add('discarded');
-                    discardPileElement.appendChild(tileElement);
-                });
+            getTiaoBamboos(value) {
+                let bamboos = '';
+                for (let i = 0; i < value; i++) {
+                    bamboos += '<div class="bamboo"></div>';
+                }
+                return bamboos;
             }
 
-            // 更新牌堆数量
-            updateDeckCount() {
-                document.getElementById('deck-count').textContent = this.deck.length;
-                document.getElementById('remaining-cards').textContent = this.deck.length;
+            updateDiscardPool() {
+                const pool = document.getElementById('discard-pool');
+                pool.innerHTML = '';
+
+                for (let i = 0; i < 36; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'discard-slot';
+
+                    if (i < this.discardedTiles.length) {
+                        const discard = this.discardedTiles[i];
+                        const tileElement = this.createTileElement(discard.tile, 'discard', i);
+                        slot.appendChild(tileElement);
+                    }
+
+                    pool.appendChild(slot);
+                }
             }
 
-            // 更新玩家状态
             updatePlayerStatus() {
                 this.players.forEach(player => {
                     const element = document.getElementById(`player-${player}`);
@@ -1071,238 +866,67 @@
                     if (player === this.banker) {
                         element.classList.add('banker');
                     }
+
+                    element.textContent = `${this.getPlayerName(player)} (${this.playerHands[player].length}张)`;
                 });
             }
 
-            // 更新操作按钮
             updateActionButtons() {
-                const drawBtn = document.getElementById('btn-draw');
-                const pengBtn = document.getElementById('btn-peng');
-                const gangBtn = document.getElementById('btn-gang');
-                const huBtn = document.getElementById('btn-hu');
-                const passBtn = document.getElementById('btn-pass');
+                const buttons = {
+                    'btn-hu': this.canHu,
+                    'btn-gang': this.canGang,
+                    'btn-peng': this.canPeng,
+                    'btn-chi': this.canChi,
+                    'btn-guo': this.canChi || this.canPeng || this.canGang || this.canHu
+                };
 
-                const isPlayerTurn = this.currentPlayer === 'south';
-                const canDraw = isPlayerTurn && this.gameState === 'playing';
-                const canAction = this.gameState === 'action';
-
-                drawBtn.disabled = !canDraw;
-                pengBtn.disabled = !canAction;
-                gangBtn.disabled = !canAction;
-                huBtn.disabled = !canAction;
-                passBtn.disabled = !canAction;
-            }
-
-            // 检查动作（碰、杠、胡）
-            checkActions(player, discardedTile) {
-                const actions = [];
-                const hand = this.playerHands[player];
-
-                // 检查胡牌
-                if (this.checkHu(hand, discardedTile)) {
-                    actions.push('hu');
-                }
-
-                // 检查杠
-                if (this.checkGang(hand, discardedTile)) {
-                    actions.push('gang');
-                }
-
-                // 检查碰
-                if (this.checkPeng(hand, discardedTile)) {
-                    actions.push('peng');
-                }
-
-                return actions;
-            }
-
-            // 处理动作选择
-            handleAction(player, action, tile) {
-                switch (action) {
-                    case 'peng':
-                        this.peng(player, tile);
-                        break;
-                    case 'gang':
-                        this.gang(player, tile);
-                        break;
-                    case 'hu':
-                        this.hu(player, '点炮');
-                        break;
-                }
-            }
-
-            // 碰牌
-            peng(player, tile) {
-                const hand = this.playerHands[player];
-                const pengTiles = hand.filter(t =>
-                    t.type === tile.type && t.number === tile.number
-                ).slice(0, 2);
-
-                // 移除碰的牌
-                pengTiles.forEach(pengTile => {
-                    const index = hand.indexOf(pengTile);
-                    if (index > -1) hand.splice(index, 1);
+                Object.keys(buttons).forEach(btnId => {
+                    const btn = document.getElementById(btnId);
+                    btn.disabled = !buttons[btnId];
                 });
-
-                // 添加碰的牌组
-                this.playerHands[player] = hand;
-                this.currentPlayer = player;
-                this.gameState = 'playing';
-                this.updateUI();
             }
 
-            // 杠牌
-            gang(player, tile) {
-                const hand = this.playerHands[player];
-                const gangTiles = hand.filter(t =>
-                    t.type === tile.type && t.number === tile.number
-                ).slice(0, 3);
-
-                // 移除杠的牌
-                gangTiles.forEach(gangTile => {
-                    const index = hand.indexOf(gangTile);
-                    if (index > -1) hand.splice(index, 1);
-                });
-
-                // 添加杠的牌组
-                this.playerHands[player] = hand;
-                this.currentPlayer = player;
-                this.gameState = 'playing';
-                this.updateUI();
+            updateGameStatus(status) {
+                document.getElementById('game-status').textContent = status;
             }
 
-            // 选择牌
             selectTile(index) {
-                if (this.currentPlayer !== 'south') return;
+                if (this.currentPlayer !== 'bottom') return;
 
-                const tiles = document.querySelectorAll('#player-hand .tile');
-                tiles.forEach(tile => tile.classList.remove('selected'));
+                // 取消之前的选择
+                if (this.selectedTile !== null) {
+                    const previousTile = document.querySelector(`[data-index="${this.selectedTile}"]`);
+                    if (previousTile) previousTile.classList.remove('selected');
+                }
 
-                if (index >= 0 && index < tiles.length) {
-                    tiles[index].classList.add('selected');
-                    this.selectedTile = index;
+                this.selectedTile = index;
+                const currentTile = document.querySelector(`[data-index="${index}"]`);
+                currentTile.classList.add('selected');
+
+                // 可以选择打出的牌
+                if (this.gameState === 'playing' && this.currentPlayer === 'bottom') {
+                    this.discardTile('bottom', index);
                 }
             }
 
-            // 绑定事件
-            bindEvents() {
-                // 摸牌按钮
-                document.getElementById('btn-draw').addEventListener('click', () => {
-                    if (this.canDraw()) {
-                        const drawnTile = this.drawCard('south');
-
-                        // 检查是否可以胡牌
-                        if (this.checkHu(this.playerHands.south, drawnTile)) {
-                            this.hu('south', '自摸');
-                            return;
-                        }
-
-                        this.enableDiscard();
-                    }
-                });
-
-                // 打牌（通过点击手牌）
-                document.getElementById('player-hand').addEventListener('click', (e) => {
-                    if (this.selectedTile !== null && this.canDiscard()) {
-                        this.discardCard('south', this.selectedTile);
-                        this.selectedTile = null;
-                    }
-                });
-
-                // 过牌按钮
-                document.getElementById('btn-pass').addEventListener('click', () => {
-                    if (this.canPass()) {
-                        this.nextPlayer();
-                    }
-                });
-
-                // 定缺选择
-                document.querySelectorAll('.dingque-option').forEach(option => {
-                    option.addEventListener('click', () => {
-                        const type = option.dataset.type;
-                        this.dingque.south = type;
-                        document.getElementById('dingque-selection').classList.remove('show');
-                        this.startGame();
-                    });
-                });
-
-                // 动作按钮
-                document.getElementById('btn-peng').addEventListener('click', () => {
-                    this.handleAction('south', 'peng', this.lastDiscardedTile);
-                });
-
-                document.getElementById('btn-gang').addEventListener('click', () => {
-                    this.handleAction('south', 'gang', this.lastDiscardedTile);
-                });
-
-                document.getElementById('btn-hu').addEventListener('click', () => {
-                    this.handleAction('south', 'hu', this.lastDiscardedTile);
-                });
+            setupEventListeners() {
+                document.getElementById('btn-hu').addEventListener('click', () => this.hu());
+                document.getElementById('btn-gang').addEventListener('click', () => this.gang());
+                document.getElementById('btn-peng').addEventListener('click', () => this.peng());
+                document.getElementById('btn-chi').addEventListener('click', () => this.chi());
+                document.getElementById('btn-guo').addEventListener('click', () => this.guo());
             }
 
-            // 处理玩家动作
-            handleAction(player, action, tile) {
-                switch (action) {
-                    case 'peng':
-                        this.peng(player, tile);
-                        break;
-                    case 'gang':
-                        this.gang(player, tile);
-                        break;
-                    case 'hu':
-                        this.hu(player, '点炮');
-                        break;
-                }
-                this.gameState = 'playing';
-                this.updateUI();
-            }
-
-            // 是否可以摸牌
-            canDraw() {
-                return this.currentPlayer === 'south' && this.gameState === 'playing';
-            }
-
-            // 是否可以过牌
-            canPass() {
-                return this.currentPlayer === 'south' && this.gameState === 'playing';
-            }
-
-            // 是否可以打牌
-            canDiscard() {
-                return this.currentPlayer === 'south' && this.gameState === 'playing';
-            }
-
-            // 启用打牌功能
-            enableDiscard() {
-                // 摸牌后可以打牌
-                this.gameState = 'playing';
-            }
-
-            // 开始游戏
-            startGame() {
-                this.gameState = 'playing';
-                this.updateUI();
-
-                // 如果当前不是玩家回合，让AI开始
-                if (this.currentPlayer !== 'south') {
-                    setTimeout(() => this.aiPlay(), 1000);
-                }
-            }
-
-            // 显示定缺选择
-            showDingqueSelection() {
-                document.getElementById('dingque-selection').classList.add('show');
+            endGame(message) {
+                this.gameState = 'ended';
+                this.updateGameStatus(message);
+                alert(message);
             }
         }
 
-        // 游戏初始化
+        // 启动游戏
         document.addEventListener('DOMContentLoaded', () => {
-            const game = new MahjongGame();
-
-            // 显示定缺选择
-            setTimeout(() => {
-                game.showDingqueSelection();
-            }, 500);
+            new EvolutionMahjongV2();
         });
     </script>
 </body>

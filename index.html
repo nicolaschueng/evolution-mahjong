@@ -39,8 +39,13 @@ body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#0a1f0f;c
 .meld-zone.bottom{bottom:130px;left:50%;transform:translateX(-50%)}
 .meld-group{display:flex;gap:1px;margin:0 3px}
 
-/* 牌河（打出的牌） */
-.river{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;display:flex;flex-wrap:wrap;gap:2px;justify-content:center;padding:4px}
+/* 牌河区域 */
+.river-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;display:grid;grid-template-areas:". top .""left . right"". bottom .";grid-template-columns:60px 1fr 60px;grid-template-rows:60px 1fr 60px}
+.river-zone{display:flex;flex-wrap:wrap;gap:2px;padding:2px;align-content:start}
+.river-top{grid-area:top;justify-content:center}
+.river-bottom{grid-area:bottom;justify-content:center}
+.river-left{grid-area:left;flex-direction:column;align-items:center}
+.river-right{grid-area:right;flex-direction:column;align-items:center}
 
 /* 牌的通用样式 */
 .t{width:36px;height:50px;border-radius:5px;display:inline-flex;flex-direction:column;justify-content:center;align-items:center;position:relative;flex-shrink:0;cursor:default;transition:transform .15s,box-shadow .15s}
@@ -136,7 +141,12 @@ body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#0a1f0f;c
     <div class="meld-zone right" id="meldRight"></div>
     <div class="meld-zone bottom" id="meldBottom"></div>
     <!-- River -->
-    <div class="river" id="river"></div>
+    <div class="river-area">
+      <div class="river-zone river-top" id="riverTop"></div>
+      <div class="river-zone river-left" id="riverLeft"></div>
+      <div class="river-zone river-right" id="riverRight"></div>
+      <div class="river-zone river-bottom" id="riverBottom"></div>
+    </div>
     <!-- My hand -->
     <div class="my-hand" id="myHand"></div>
     <!-- Actions -->
@@ -902,11 +912,12 @@ class Game{
       });
     });
 
-    // River
-    const rv=document.getElementById('river');
-    rv.innerHTML='';
-    this.river.slice(-24).forEach(r=>{
-      rv.appendChild(renderTile(r.tile,{size:'river-t',cls:'river-t'}));
+    // River - per player
+    const seatToRiver={top:'riverTop',left:'riverLeft',right:'riverRight',bottom:'riverBottom'};
+    Object.values(seatToRiver).forEach(id=>{document.getElementById(id).innerHTML='';});
+    this.river.forEach(r=>{
+      const el=document.getElementById(seatToRiver[r.seat]);
+      if(el) el.appendChild(renderTile(r.tile,{size:'river-t',cls:'river-t'}));
     });
 
     // My hand
